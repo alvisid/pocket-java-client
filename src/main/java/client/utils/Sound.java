@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.sound.sampled.*;
-import java.io.File;
 import java.io.IOException;
 
 public class Sound implements AutoCloseable {
@@ -14,17 +13,21 @@ public class Sound implements AutoCloseable {
     private Clip clip = null;
     private FloatControl volumeControl = null;
     private boolean playing = false;
+    private final String SOUND_NEW_MSG = "client/sounds/1.wav";
 
-    public Sound(File f) {
+    public Sound(int what) {
+        ClassLoader cl = this.getClass().getClassLoader();
         try {
-            stream = AudioSystem.getAudioInputStream(f);
+            switch(what) {
+                case 1:stream = AudioSystem.getAudioInputStream(cl.getResource(SOUND_NEW_MSG)); //Новое сообщение
+            }
             clip = AudioSystem.getClip();
             clip.open(stream);
             clip.addLineListener(new Listener());
             volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
             released = true;
         } catch (IOException | UnsupportedAudioFileException | LineUnavailableException exc) {
-            soundLogger.error("Sound_error", exc);
+            exc.printStackTrace();
             released = false;
             close();
         }
@@ -118,14 +121,6 @@ public class Sound implements AutoCloseable {
         }
     }
 
-    // Статический метод, для удобства
-    public static Sound playSound(String path) {
-        File f = new File(path);
-        Sound snd = new Sound(f);
-        snd.play();
-        return snd;
-    }
-
     private class Listener implements LineListener {
         public void update(LineEvent ev) {
             if (ev.getType() == LineEvent.Type.STOP) {
@@ -136,4 +131,16 @@ public class Sound implements AutoCloseable {
             }
         }
     }
+
+    /**
+    * Статические методы, для удобства
+     * 1 - Новое сообщение (Указывается для конструктора
+     * 2 - ... Задать в конструторе и создать метод
+    */
+    public static Sound playSoundNewMessage() {
+        Sound snd = new Sound(1);
+        snd.play();
+        return snd;
+    }
+
 }
